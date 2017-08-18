@@ -11,6 +11,7 @@ use autodie;
 use Log::Log4perl qw(:easy);
 use List::Util qw(any);
 use Math::Units qw(convert);
+use Math::Round;
 
 has verbose => (
     is      => 'ro',
@@ -21,6 +22,7 @@ has verbose => (
 # Actions that need to be run after the constructor
 sub BUILD {
     my $self = shift;
+    $self->{_last_packet} = "";
     # Add stuff here
 }
 
@@ -35,6 +37,8 @@ sub decode {
 	my $data = $self->_extract_data($input);
 	
 	my $result = $self->_parse_data($data);
+	
+	return $result;
 }
 
 # Basic sanity check on the received input
@@ -44,7 +48,7 @@ sub _check_format {
 	my $input = shift();
 	
 	if (! ($input =~ /\n\r\n\r$/g )) {
-		LOGCROAK "Input string does not contain the expected end of line";
+		LOGCARP "Input string does not contain the expected end of line";
 	}
 	
 	my @valid_packets = [ 2 .. 9, 'a', 'e' ];
@@ -65,12 +69,14 @@ sub _extract_data {
 	
 	my @bytes = split(/\n\r/, $input);
 	my $raw;
+	$self->{_last_packet} = '';
+	
 	foreach (@bytes) {
 		if ($_ =~ /\d\s+=\s+([[:xdigit:]]+)/){
 			push @{$raw}, hex($1);
-			#sprintf("%02X", hex($1));	
+			$self->{_last_packet} .= sprintf("%02X", hex($1));	
 		} else {
-			LOGDIE "Invalid input entry '$_'";
+			LOGCARP "Invalid input entry '$_'";
 		}
 	}
 	
@@ -82,7 +88,7 @@ sub _parse_data {
 	
 	my $self = shift();
 	my $input = shift();
-	
+		
 	#print $input . "\n";
 
 	# Fetch the header byte to determine the packet type
@@ -91,35 +97,47 @@ sub _parse_data {
 	my $data;
 	
 	# Fetch wind speed
-	$data->{windSpeed} = convert($input->[1], 'mi', 'km');
+	$data->{windSpeed}->{current} = round(convert($input->[1], 'mi', 'km'));
+	$data->{windSpeed}->{type} = 'speed';
+	$data->{windSpeed}->{units} = 'kph';
+	
 	# Fetch wind direction
 	if ($input->[2] == 0) {
-  		$data->{windDirection} = 360;
+  		$data->{windDirection}->{current} = 360;
 	} else {
-  		$data->{windDirection} = ($input->[2] * 1.40625) + .3;
+  		$data->{windDirection}->{current} = round( ($input->[2] * 1.40625) + .3);
 	}
-	
+  	$data->{windDirection}->{type} = 'angle';
+  	$data->{windDirection}->{units} = 'degrees';
+  	
 	if ($header eq '2') {
-		$data->{capVoltage} = (($input->[3] * 4) + (($input->[4] && 0xC0) / 64)) / 100
+		$data->{capVoltage}->{current} = (($input->[3] * 4) + (($input->[4] && 0xC0) / 64)) / 100;
+		$data->{capVoltage}->{type} = 'voltage';
 	}
 		
 	if ($header eq '7') {
-		$data->{solar} = $input->[3] * 4 + ($input->[4] && 0xC0) / 64;
+		$data->{solar}->{current} = $input->[3] * 4 + ($input->[4] && 0xC0) / 64;
+		$data->{solar}->{type} = 'current';
 		DEBUG "Solar cell info packet detected: $data->{solar}";
 	}	
 	
 	if ($header eq '8') {
-		$data->{temperature} = ((($input->[3] * 256 + $input->[4]) / 160) - 32) * 5 / 9
+		$data->{temperature}->{current} = nearest(.1, ((($input->[3] * 256 + $input->[4]) / 160) - 32) * 5 / 9 );
+		$data->{temperature}->{type} = 'temp';
 	}
 	
 	if ($header eq '9') {
-		$data->{windGust} = convert($input->[3], 'mi', 'km');
+		$data->{windGust}->{current} = round(convert($input->[3], 'mi', 'km'));
+		$data->{windGust}->{type} = 'speed';
+		$data->{windGust}->{units} = 'kph';
 	}
 	
-	if ($header eq 'a') {
-		$data->{humidity} = ((($input->[4] && 0xF0) * 16) + $input->[3]) / 10
+	if ($header eq '10') {
+		$data->{humidity}->{current} = nearest(.1,  (($input->[4] && 0xF0) * 16) + $input->[3]);
+		$data->{humidity}->{type} = 'humidity';
 	}
 	
+	$data->{rawpacket} = $self->{_last_packet};
 	return $data;	
 }
 
