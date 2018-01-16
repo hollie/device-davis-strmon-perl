@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package Device::Davis::Strmon;
 
-# ABSTRACT: Parser for the Davis ISS output of the STRMON command
+# ABSTRACT: Parser for the Davis Vue ISS output of the STRMON command
 # VERSION
 
 use Moose;
@@ -50,7 +50,7 @@ sub _check_format {
 	if (! ($input =~ /\n\r\n\r$/g )) {
 		LOGCARP "Input string does not contain the expected end of line";
 	}
-	
+
 	my @valid_packets = [ 2 .. 9, 'a', 'e' ];
 
 	if ($input =~ /0\s+=\s+([[:xdigit:]])[[:xdigit:]]\r\n/g ) {
@@ -91,11 +91,21 @@ sub _parse_data {
 		
 	#print $input . "\n";
 
+	my $data;
+
+	# Check if the CRC was valid
+	$data->{rawpacket} = $self->{_last_packet};
+		
+	if (!substr($data->{rawpacket}, -4, 4) eq 'FFFF'){
+		$data->{crc} = "fail";
+		return $data;			
+	} else {
+		$data->{crc} = "ok";
+	}
+	
 	# Fetch the header byte to determine the packet type
 	my $header = $input->[0] / 16;
-	
-	my $data;
-	
+		
 	# Fetch wind speed
 	$data->{windSpeed}->{current} = round(convert($input->[1], 'mi', 'km'));
 	$data->{windSpeed}->{type} = 'speed';
@@ -137,7 +147,6 @@ sub _parse_data {
 		$data->{humidity}->{type} = 'humidity';
 	}
 	
-	$data->{rawpacket} = $self->{_last_packet};
 	return $data;	
 }
 
