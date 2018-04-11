@@ -1,0 +1,41 @@
+==================================================
+Changes from 2017-04-11 00:00:00 +0000 to present.
+==================================================
+
+------------------------------------------
+version 0.001 at 2018-04-11 19:37:55 +0000
+------------------------------------------
+
+  Change: f4036d4a1bb7865c89a87afdd277418b74bba157
+  Author: Lieven Hollevoet <lieven@quicksand.be>
+  Date : 2018-04-11 21:36:02 +0000
+
+    Adding ignore file for the builds 
+
+  Change: dba53b0c633c2a15984e4768f973e854c96d6c8a
+  Author: Lieven Hollevoet <lieven@quicksand.be>
+  Date : 2018-04-11 21:33:31 +0000
+
+    Fix the humidity calculation 
+
+  Change: 8ebf3e145e6b22c53db05bdaf4c20863e2130ce2
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-01-16 22:44:18 +0000
+
+    Check the CRC to be valid before parsing the data 
+
+  Change: d731c5d84733a849d74252b7e9482eebb03201e2
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2017-08-18 13:29:00 +0000
+
+    First functional release 
+
+  Change: 7726c7a7147d3a34d4ed2ab9d6b912ed2ee36d26
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2017-01-14 09:56:36 +0000
+
+    Initial import of code into repo 
+
+================
+End of releases.
+================
