@@ -143,7 +143,7 @@ sub _parse_data {
 	}
 	
 	if ($header eq '10') {
-		$data->{humidity}->{current} = nearest(.1,  (($input->[4] && 0xF0) * 16) + $input->[3]);
+		$data->{humidity}->{current} = nearest(.1,  (($input->[4] && 0xF0) / 16) + $input->[3]);
 		$data->{humidity}->{type} = 'humidity';
 	}
 	

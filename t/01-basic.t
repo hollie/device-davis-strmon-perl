@@ -6,6 +6,7 @@ use strict;
 use Test::More;
 use lib './lib';
 use lib '../lib';
+use Data::Dumper;
 
 #use_ok 'IO::File';
 use_ok 'Device::Davis::Strmon';
@@ -24,7 +25,16 @@ ok $dut, 'Object created';
 
 # Test packet 70
 my $data = $dut->decode("0 = 70\n\r1 = 2\n\r2 = B0\n\r3 = 0\n\r4 = 41\n\r5 = 89\n\r6 = CE\n\r7 = 92\n\r8 = FF\n\r9 = FF\n\r\n\r");
-is $data->{windSpeed}, 3, "Windspeed decoded";
-is $data->{windDirection}, 248, "Wind direction decoded";
+is $data->{windSpeed}->{current}, 3, "Windspeed decoded";
+is $data->{windDirection}->{current}, 248, "Wind direction decoded";
+
+# Test packet that reports humidity
+$data = $dut->decode("0 = A0\n\r1 = 06\n\r2 = A2\n\r3 = 17\n\r4 = 3B\n\r5 = 02\n\r6 = 14\n\r7 = 6D\n\r8 = FF\n\r9 = FF\n\r\n\r");
+print Dumper($data);
+
+# Test a packet with failed CRC
+# FA1EC51251E2374D7658
+$data = $dut->decode("0 = A0\n\r1 = 06\n\r2 = A2\n\r3 = 17\n\r4 = 3B\n\r5 = 02\n\r6 = 14\n\r7 = 6D\n\r8 = FF\n\r9 = FF\n\r\n\r");
+print Dumper($data);
 
 done_testing();
