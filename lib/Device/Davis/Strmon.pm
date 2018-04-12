@@ -113,10 +113,14 @@ sub _parse_data {
 	
 	# Fetch wind direction
 	if ($input->[2] == 0) {
-  		$data->{windDirection}->{current} = 360;
+  		$data->{windDirection}->{current} = 0;
 	} else {
   		$data->{windDirection}->{current} = round( ($input->[2] * 1.40625) + .3);
 	}
+	
+	# Transmitter battery status
+	$data->{transmitterBattery}->{current} = ($input->[0] & 0x8) >> 3;
+	 
   	$data->{windDirection}->{type} = 'angle';
   	$data->{windDirection}->{units} = 'degrees';
   	INFO "Raw packet: " . $data->{rawpacket};
@@ -128,18 +132,21 @@ sub _parse_data {
 		$data->{capVoltage}->{current} = (($input->[3] * 4) + (($input->[4] && 0xC0) / 64)) / 100;
 		INFO "Capvoltage decoded " . $data->{capVoltage}->{current};
 		$data->{capVoltage}->{type} = 'voltage';
+		return $data;
 	}
 		
 	if ($header eq '7') {
 		$data->{solar}->{current} = $input->[3] * 4 + ($input->[4] && 0xC0) / 64;
 		INFO "Solar cell info decoded " . $data->{solar}->{current};
 		$data->{solar}->{type} = 'voltage';
+		return $data;
 	}	
 	
 	if ($header eq '8') {
 		$data->{temperature}->{current} = nearest(.1, ((($input->[3] * 256 + $input->[4]) / 160) - 32) * 5 / 9 );
 		INFO "Decoded temperature " . $data->{temperature}->{current};
 		$data->{temperature}->{type} = 'temp';
+		return $data;
 	}
 	
 	if ($header eq '9') {
@@ -147,13 +154,17 @@ sub _parse_data {
 		INFO "Decoded windgust " . $data->{windGust}->{current};
 		$data->{windGust}->{type} = 'speed';
 		$data->{windGust}->{units} = 'kph';
+		return $data;
 	}
 	
 	if ($header eq '10') {
 		$data->{humidity}->{current} = nearest(.1,  (int($input->[4] / 16 ) * 256) + $input->[3])/10;
 		INFO "Decoded humidity " . $data->{humidity}->{current};
 		$data->{humidity}->{type} = 'humidity';
+		return $data;
 	}
+	
+	INFO "Unhandled packet header '$header'";
 	
 	return $data;	
 }
