@@ -96,7 +96,7 @@ sub _parse_data {
 	# Check if the CRC was valid
 	$data->{rawpacket} = $self->{_last_packet};
 		
-	if (!substr($data->{rawpacket}, -4, 4) eq 'FFFF'){
+	if (substr($data->{rawpacket}, -4, 4) ne 'FFFF' || !defined($data->{rawpacket}) || !defined($input)){
 		$data->{crc} = "fail";
 		return $data;			
 	} else {
@@ -119,25 +119,32 @@ sub _parse_data {
 	}
   	$data->{windDirection}->{type} = 'angle';
   	$data->{windDirection}->{units} = 'degrees';
+  	INFO "Raw packet: " . $data->{rawpacket};
+  	INFO "Windspeed " . $data->{windSpeed}->{current};
+  	INFO "Winddirection " . $data->{windDirection}->{current};
+  	
   	
 	if ($header eq '2') {
 		$data->{capVoltage}->{current} = (($input->[3] * 4) + (($input->[4] && 0xC0) / 64)) / 100;
+		INFO "Capvoltage decoded " . $data->{capVoltage}->{current};
 		$data->{capVoltage}->{type} = 'voltage';
 	}
 		
 	if ($header eq '7') {
 		$data->{solar}->{current} = $input->[3] * 4 + ($input->[4] && 0xC0) / 64;
-		$data->{solar}->{type} = 'current';
-		DEBUG "Solar cell info packet detected: $data->{solar}";
+		INFO "Solar cell info decoded " . $data->{solar}->{current};
+		$data->{solar}->{type} = 'voltage';
 	}	
 	
 	if ($header eq '8') {
 		$data->{temperature}->{current} = nearest(.1, ((($input->[3] * 256 + $input->[4]) / 160) - 32) * 5 / 9 );
+		INFO "Decoded temperature " . $data->{temperature}->{current};
 		$data->{temperature}->{type} = 'temp';
 	}
 	
 	if ($header eq '9') {
 		$data->{windGust}->{current} = round(convert($input->[3], 'mi', 'km'));
+		INFO "Decoded windgust " . $data->{windGust}->{current};
 		$data->{windGust}->{type} = 'speed';
 		$data->{windGust}->{units} = 'kph';
 	}

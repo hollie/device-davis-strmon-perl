@@ -39,7 +39,9 @@ is $data->{'humidity'}->{'current'}, 91.2, "Humidity decoded as expected";
 
 # Test a packet with failed CRC
 # FA1EC51251E2374D7658
-$data = $dut->decode("0 = A0\n\r1 = 06\n\r2 = A2\n\r3 = 17\n\r4 = 3B\n\r5 = 02\n\r6 = 14\n\r7 = 6D\n\r8 = FF\n\r9 = FF\n\r\n\r");
+# 229869DC361F3C65737F
+$data = $dut->decode("0 = 22\n\r1 = 98\n\r2 = 69\n\r3 = DC\n\r4 = 36\n\r5 = 1F\n\r6 = 3C\n\r7 = 65\n\r8 = 73\n\r9 = 7F\n\r\n\r");
 print Dumper($data);
+is $data->{'crc'}, 'fail', "CRC reported to be failed as expected";
 
 done_testing();
