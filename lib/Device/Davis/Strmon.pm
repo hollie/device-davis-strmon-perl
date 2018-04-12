@@ -164,6 +164,12 @@ sub _parse_data {
 		return $data;
 	}
 	
+	if ($header eq '14') {
+		$data->{rainCounter}->{current} = nearest(.1, $input->[3] * 0.2);
+		INFO "Decoded raincounter " . $data->{rainCounter}->{current};
+		return $data;
+	}
+	
 	INFO "Unhandled packet header '$header'";
 	
 	return $data;	
