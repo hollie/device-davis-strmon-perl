@@ -124,34 +124,34 @@ sub _parse_data {
   	$data->{windDirection}->{type} = 'angle';
   	$data->{windDirection}->{units} = 'degrees';
   	INFO "Raw packet: " . $data->{rawpacket};
-  	INFO "Windspeed " . $data->{windSpeed}->{current};
-  	INFO "Winddirection " . $data->{windDirection}->{current};
+  	DEBUG "Windspeed " . $data->{windSpeed}->{current};
+  	DEBUG "Winddirection " . $data->{windDirection}->{current};
   	
   	
 	if ($header eq '2') {
 		$data->{capVoltage}->{current} = (($input->[3] * 4) + (($input->[4] && 0xC0) / 64)) / 100;
-		INFO "Capvoltage decoded " . $data->{capVoltage}->{current};
+		DEBUG "Capvoltage decoded " . $data->{capVoltage}->{current};
 		$data->{capVoltage}->{type} = 'voltage';
 		return $data;
 	}
 		
 	if ($header eq '7') {
 		$data->{solar}->{current} = $input->[3] * 4 + ($input->[4] && 0xC0) / 64;
-		INFO "Solar cell info decoded " . $data->{solar}->{current};
+		DEBUG "Solar cell info decoded " . $data->{solar}->{current};
 		$data->{solar}->{type} = 'voltage';
 		return $data;
 	}	
 	
 	if ($header eq '8') {
 		$data->{temperature}->{current} = nearest(.1, ((($input->[3] * 256 + $input->[4]) / 160) - 32) * 5 / 9 );
-		INFO "Decoded temperature " . $data->{temperature}->{current};
+		DEBUG "Decoded temperature " . $data->{temperature}->{current};
 		$data->{temperature}->{type} = 'temp';
 		return $data;
 	}
 	
 	if ($header eq '9') {
 		$data->{windGust}->{current} = round(convert($input->[3], 'mi', 'km'));
-		INFO "Decoded windgust " . $data->{windGust}->{current};
+		DEBUG "Decoded windgust " . $data->{windGust}->{current};
 		$data->{windGust}->{type} = 'speed';
 		$data->{windGust}->{units} = 'kph';
 		return $data;
@@ -159,18 +159,18 @@ sub _parse_data {
 	
 	if ($header eq '10') {
 		$data->{humidity}->{current} = nearest(.1,  (int($input->[4] / 16 ) * 256) + $input->[3])/10;
-		INFO "Decoded humidity " . $data->{humidity}->{current};
+		DEBUG "Decoded humidity " . $data->{humidity}->{current};
 		$data->{humidity}->{type} = 'humidity';
 		return $data;
 	}
 	
 	if ($header eq '14') {
 		$data->{rainCounter}->{current} = nearest(.1, $input->[3] * 0.2);
-		INFO "Decoded raincounter " . $data->{rainCounter}->{current};
+		DEBUG "Decoded raincounter " . $data->{rainCounter}->{current};
 		return $data;
 	}
 	
-	INFO "Unhandled packet header '$header'";
+	DEBUG "Unhandled packet header '$header'";
 	
 	return $data;	
 }
