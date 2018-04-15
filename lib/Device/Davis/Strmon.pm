@@ -24,6 +24,7 @@ sub BUILD {
     my $self = shift;
     $self->{_last_packet} = "";
     # Add stuff here
+    $self->{_init_rain_reading} = 1;
 }
 
 sub decode {
@@ -165,8 +166,29 @@ sub _parse_data {
 	}
 	
 	if ($header eq '14') {
-		$data->{rainCounter}->{current} = nearest(.1, $input->[3] * 0.2);
-		DEBUG "Decoded raincounter " . $data->{rainCounter}->{current};
+		my $rain_counter = $input->[3];
+		my $new_rain = 0;
+		
+		if ($self->{_init_rain_reading}) {
+			$self->{_init_rain_reading} = false;
+			$self->{_last_rain_bucketcount} = $rain_counter;
+		} else {
+			if ($rain_counter != $self->{_last_rain_bucketcount}) {
+				
+				if ($rain_counter < $self->{_last_rain_bucketcount}){
+					$new_rain = (128 - $self->{_last_rain_bucketcount}) + $rain_counter;
+				} else {
+					$new_rain = $rain_counter - $self->{_last_rain_bucketcount};
+				}
+				
+				$self->{_last_rain_bucketcount} = $rain_counter;
+				
+			}
+		}
+		
+		$data->{rain}->{current} = $new_rain * 0.02;
+
+		INFO "Decoded rainfall " . $data->{rain}->{current};
 		return $data;
 	}
 	

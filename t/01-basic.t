@@ -44,4 +44,18 @@ $data = $dut->decode("0 = 22\n\r1 = 98\n\r2 = 69\n\r3 = DC\n\r4 = 36\n\r5 = 1F\n
 print Dumper($data);
 is $data->{'crc'}, 'fail', "CRC reported to be failed as expected";
 
+# High temperature reading?
+# 8000BC34720070DCFFFF
+# 20005E7741801084FFFF
+# 50005EFF710053FEFFFF
+$data = $dut->decode("0 = 80\n\r1 = 00\n\r2 = BC\n\r3 = 34\n\r4 = 72\n\r5 = 00\n\r6 = 70\n\r7 = DC\n\r8 = FF\n\r9 = FF\n\r\n\r");
+print Dumper($data);
+
+
+$data = $dut->decode("0 = 20\n\r1 = 00\n\r2 = 5E\n\r3 = 77\n\r4 = 41\n\r5 = 80\n\r6 = 10\n\r7 = 84\n\r8 = FF\n\r9 = FF\n\r\n\r");
+print Dumper($data);
+
+$data = $dut->decode("0 = 50\n\r1 = 00\n\r2 = 5E\n\r3 = FF\n\r4 = 71\n\r5 = 00\n\r6 = 53\n\r7 = FE\n\r8 = FF\n\r9 = FF\n\r\n\r");
+print Dumper($data);
+
 done_testing();
