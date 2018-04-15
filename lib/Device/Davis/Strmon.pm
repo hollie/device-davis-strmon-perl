@@ -170,7 +170,7 @@ sub _parse_data {
 		my $new_rain = 0;
 		
 		if ($self->{_init_rain_reading}) {
-			$self->{_init_rain_reading} = false;
+			$self->{_init_rain_reading} = 0;
 			$self->{_last_rain_bucketcount} = $rain_counter;
 		} else {
 			if ($rain_counter != $self->{_last_rain_bucketcount}) {
