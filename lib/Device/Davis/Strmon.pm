@@ -84,6 +84,23 @@ sub _extract_data {
 	return $raw;
 }
 
+# This function is for testing purposes, it allows to generate a valid input string from a raw packet
+sub _create_data {
+	my $self = shift();
+	my $input = shift();
+	
+	my @bytes = ( $input =~ m/../g );
+	
+	my $output;
+	my $counter = 0;
+	
+	foreach (@bytes) {
+		$output .= $counter . " = " . $_ . "\n\r";
+	}
+	$output .= "\n\r";
+	return $output;
+}
+
 # Actual parsing of the data
 sub _parse_data {
 	
@@ -181,7 +198,14 @@ sub _parse_data {
 					$new_rain = $rain_counter - $self->{_last_rain_bucketcount};
 				}
 				
-				$self->{_last_rain_bucketcount} = $rain_counter;
+				# Only accept valid input, there can't be more than 2 tips per delta
+				if ($new_rain < 3) {
+					$self->{_last_rain_bucketcount} = $rain_counter;
+				} else {
+					# Else we don't accept
+					INFO "Refusing to accept $new_rain bucket tips"; 
+					$new_rain = 0;
+				}
 				
 			}
 		}

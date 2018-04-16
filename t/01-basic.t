@@ -48,7 +48,8 @@ is $data->{'crc'}, 'fail', "CRC reported to be failed as expected";
 # 8000BC34720070DCFFFF
 # 20005E7741801084FFFF
 # 50005EFF710053FEFFFF
-$data = $dut->decode("0 = 80\n\r1 = 00\n\r2 = BC\n\r3 = 34\n\r4 = 72\n\r5 = 00\n\r6 = 70\n\r7 = DC\n\r8 = FF\n\r9 = FF\n\r\n\r");
+my $input = $dut->_create_data('8000BC34720070DCFFFF');
+$data = $dut->decode($input);
 print Dumper($data);
 
 
@@ -57,5 +58,23 @@ print Dumper($data);
 
 $data = $dut->decode("0 = 50\n\r1 = 00\n\r2 = 5E\n\r3 = FF\n\r4 = 71\n\r5 = 00\n\r6 = 53\n\r7 = FE\n\r8 = FF\n\r9 = FF\n\r\n\r");
 print Dumper($data);
+
+# Testing rain invalid packet
+$input = $dut->_create_data('E005D734010F8AFAFFFF');
+$data = $dut->decode($input);
+DEBUG Dumper($data);
+is $data->{'rain'}->{'current'}, 0, "No rain counted";
+
+
+$input = $dut->_create_data('E00F6C69020020E0FFFF');
+$data = $dut->decode($input);
+DEBUG Dumper($data);
+is $data->{'rain'}->{'current'}, 0, "No rain counted";
+
+$input = $dut->_create_data('E004B6340302B802FFFF');
+$data = $dut->decode($input);
+DEBUG Dumper($data);
+is $data->{'rain'}->{'current'}, 0, "No rain counted";
+
 
 done_testing();
