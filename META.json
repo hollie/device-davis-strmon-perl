@@ -41,6 +41,7 @@
       },
       "runtime" : {
          "requires" : {
+            "Digest::CRC" : "0",
             "List::Util" : "0",
             "Log::Log4perl" : "0",
             "Math::Round" : "0",
@@ -69,7 +70,7 @@
    "provides" : {
       "Device::Davis::Strmon" : {
          "file" : "lib/Device/Davis/Strmon.pm",
-         "version" : "0.002"
+         "version" : "0.003"
       }
    },
    "release_status" : "stable",
@@ -83,7 +84,7 @@
          "web" : "https://github.com/hollie/device-davis-strmon-perl"
       }
    },
-   "version" : "0.002",
+   "version" : "0.003",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.027004"
@@ -198,7 +199,7 @@
                   "branch" : "releases",
                   "changelog" : "Changes",
                   "signed" : 0,
-                  "tag" : "v0.002",
+                  "tag" : "v0.003",
                   "tag_format" : "v%v",
                   "tag_message" : "v%v"
                },

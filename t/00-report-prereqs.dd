@@ -16,6 +16,7 @@ do { my $x = {
                     },
        'runtime' => {
                       'requires' => {
+                                      'Digest::CRC' => '0',
                                       'List::Util' => '0',
                                       'Log::Log4perl' => '0',
                                       'Math::Round' => '0',

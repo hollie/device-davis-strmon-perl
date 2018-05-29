@@ -1,10 +1,40 @@
 ==================================================
-Changes from 2017-04-12 00:00:00 +0000 to present.
+Changes from 2017-05-29 00:00:00 +0000 to present.
 ==================================================
 
 ------------------------------------------
-version 0.002 at 2018-04-12 20:20:56 +0000
+version 0.003 at 2018-05-29 20:36:37 +0000
 ------------------------------------------
+
+  Change: f656d3d96abe06d30dab4cc2fb3215f3ea40195b
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-05-29 22:36:33 +0000
+
+    Adding CRC check that is validated against actual packets 
+
+  Change: 37037554f059b34aad3dc0e3e163e2113b6f33f3
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-04-16 21:26:13 +0000
+
+    Do a validaty check on the rain bucket tips per time unit 
+
+  Change: 3e794567f653f5373da0d5cf595764d097da7fc2
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-04-15 22:04:05 +0000
+
+    Typo fix 
+
+  Change: a46b2b07e5643cf28a0d6b7eb9dc874983f9ad11
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-04-15 22:00:55 +0000
+
+    Added rain bucket parsing 
+
+  Change: d63a22ac0bcc16b1cc3aca94056fe37a8e980f1b
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-04-13 21:03:05 +0000
+
+    Make the protocol decoding less chatty 
 
   Change: 9925b4d6da47abcb98b28a343c48c14eddfe3968
   Author: Lieven Hollevoet <hollie@lika.be>
@@ -67,6 +97,16 @@ version 0.002 at 2018-04-12 20:20:56 +0000
   Date : 2017-01-14 09:56:36 +0000
 
     Initial import of code into repo 
+
+------------------------------------------
+version 0.002 at 2018-04-12 20:21:00 +0000
+------------------------------------------
+
+  Change: 987ab9c510f77954e9fc577581c90aecc30f2d97
+  Author: Lieven Hollevoet <hollie@lika.be>
+  Date : 2018-04-12 22:21:00 +0000
+
+    Build results of 9925b4d (on master) 
 
 ------------------------------------------
 version 0.001 at 2018-04-11 19:38:04 +0000

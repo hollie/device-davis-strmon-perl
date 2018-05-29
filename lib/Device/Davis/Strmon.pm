@@ -3,7 +3,7 @@ use warnings;
 package Device::Davis::Strmon;
 
 # ABSTRACT: Parser for the Davis Vue ISS output of the STRMON command
-our $VERSION = '0.002'; # VERSION
+our $VERSION = '0.003'; # VERSION
 
 use Moose;
 use namespace::autoclean;
@@ -12,6 +12,8 @@ use Log::Log4perl qw(:easy);
 use List::Util qw(any);
 use Math::Units qw(convert);
 use Math::Round;
+use Digest::CRC qw(crcccitt);
+
 
 has verbose => (
     is      => 'ro',
@@ -24,6 +26,8 @@ sub BUILD {
     my $self = shift;
     $self->{_last_packet} = "";
     # Add stuff here
+    $self->{_init_rain_reading} = 1;
+    $self->{_crc} = Digest::CRC->new(width=>16,init=>0x0000,xorout=>0,refout=>0,poly=>0x1021,refin=>0,cont=>0);
 }
 
 sub decode {
@@ -83,6 +87,23 @@ sub _extract_data {
 	return $raw;
 }
 
+# This function is for testing purposes, it allows to generate a valid input string from a raw packet
+sub _create_data {
+	my $self = shift();
+	my $input = shift();
+	
+	my @bytes = ( $input =~ m/../g );
+	
+	my $output;
+	my $counter = 0;
+	
+	foreach (@bytes) {
+		$output .= $counter . " = " . $_ . "\n\r";
+	}
+	$output .= "\n\r";
+	return $output;
+}
+
 # Actual parsing of the data
 sub _parse_data {
 	
@@ -95,9 +116,29 @@ sub _parse_data {
 
 	# Check if the CRC was valid
 	$data->{rawpacket} = $self->{_last_packet};
-		
-	if (substr($data->{rawpacket}, -4, 4) ne 'FFFF' || !defined($data->{rawpacket}) || !defined($input)){
-		$data->{crc} = "fail";
+	
+	# Check length, expecting 10 bytes
+	if (length($data->{rawpacket}) != 20) {
+		LOGCARP "Unexpected packet length, should be 10 bytes";
+		return $data->{crc} = "fail";
+	}
+	
+	## Strip the last two bytes for the CRC calculation
+	my $payload =  substr($data->{rawpacket}, 0, -4);
+	
+	# Check the CRC
+	my $crc_input = substr($payload, 0, -4);
+	my $crc_input_bin = pack("H*",$crc_input);
+
+	$self->{_crc}->reset();	
+	$self->{_crc}->add($crc_input_bin);
+	
+	INFO "Input: $crc_input";
+
+	my $crc_hex = uc($self->{_crc}->hexdigest());
+			
+	if (uc(substr($payload, -4, 4)) ne $crc_hex || !defined($data->{rawpacket}) || !defined($input)){
+		$data->{crc} = "fail, expected $crc_hex";
 		return $data;			
 	} else {
 		$data->{crc} = "ok";
@@ -124,34 +165,34 @@ sub _parse_data {
   	$data->{windDirection}->{type} = 'angle';
   	$data->{windDirection}->{units} = 'degrees';
   	INFO "Raw packet: " . $data->{rawpacket};
-  	INFO "Windspeed " . $data->{windSpeed}->{current};
-  	INFO "Winddirection " . $data->{windDirection}->{current};
+  	DEBUG "Windspeed " . $data->{windSpeed}->{current};
+  	DEBUG "Winddirection " . $data->{windDirection}->{current};
   	
   	
 	if ($header eq '2') {
 		$data->{capVoltage}->{current} = (($input->[3] * 4) + (($input->[4] && 0xC0) / 64)) / 100;
-		INFO "Capvoltage decoded " . $data->{capVoltage}->{current};
+		DEBUG "Capvoltage decoded " . $data->{capVoltage}->{current};
 		$data->{capVoltage}->{type} = 'voltage';
 		return $data;
 	}
 		
 	if ($header eq '7') {
 		$data->{solar}->{current} = $input->[3] * 4 + ($input->[4] && 0xC0) / 64;
-		INFO "Solar cell info decoded " . $data->{solar}->{current};
+		DEBUG "Solar cell info decoded " . $data->{solar}->{current};
 		$data->{solar}->{type} = 'voltage';
 		return $data;
 	}	
 	
 	if ($header eq '8') {
 		$data->{temperature}->{current} = nearest(.1, ((($input->[3] * 256 + $input->[4]) / 160) - 32) * 5 / 9 );
-		INFO "Decoded temperature " . $data->{temperature}->{current};
+		DEBUG "Decoded temperature " . $data->{temperature}->{current};
 		$data->{temperature}->{type} = 'temp';
 		return $data;
 	}
 	
 	if ($header eq '9') {
 		$data->{windGust}->{current} = round(convert($input->[3], 'mi', 'km'));
-		INFO "Decoded windgust " . $data->{windGust}->{current};
+		DEBUG "Decoded windgust " . $data->{windGust}->{current};
 		$data->{windGust}->{type} = 'speed';
 		$data->{windGust}->{units} = 'kph';
 		return $data;
@@ -159,18 +200,39 @@ sub _parse_data {
 	
 	if ($header eq '10') {
 		$data->{humidity}->{current} = nearest(.1,  (int($input->[4] / 16 ) * 256) + $input->[3])/10;
-		INFO "Decoded humidity " . $data->{humidity}->{current};
+		DEBUG "Decoded humidity " . $data->{humidity}->{current};
 		$data->{humidity}->{type} = 'humidity';
 		return $data;
 	}
 	
 	if ($header eq '14') {
-		$data->{rainCounter}->{current} = nearest(.1, $input->[3] * 0.2);
-		INFO "Decoded raincounter " . $data->{rainCounter}->{current};
+		my $rain_counter = $input->[3];
+		my $new_rain = 0;
+		
+		if ($self->{_init_rain_reading}) {
+			$self->{_init_rain_reading} = 0;
+			$self->{_last_rain_bucketcount} = $rain_counter;
+		} else {
+			if ($rain_counter != $self->{_last_rain_bucketcount}) {
+				
+				if ($rain_counter < $self->{_last_rain_bucketcount}){
+					$new_rain = (128 - $self->{_last_rain_bucketcount}) + $rain_counter;
+				} else {
+					$new_rain = $rain_counter - $self->{_last_rain_bucketcount};
+				}
+				
+				$self->{_last_rain_bucketcount} = $rain_counter;
+				
+			}
+		}
+		
+		$data->{rain}->{current} = $new_rain * 0.02;
+
+		INFO "Decoded rainfall " . $data->{rain}->{current};
 		return $data;
 	}
 	
-	INFO "Unhandled packet header '$header'";
+	DEBUG "Unhandled packet header '$header'";
 	
 	return $data;	
 }

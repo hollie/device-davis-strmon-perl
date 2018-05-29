@@ -16,6 +16,7 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Device::Davis::Strmon",
   "PREREQ_PM" => {
+    "Digest::CRC" => 0,
     "List::Util" => 0,
     "Log::Log4perl" => 0,
     "Math::Round" => 0,
@@ -34,7 +35,7 @@ my %WriteMakefileArgs = (
     "Test::More" => 0,
     "lib" => 0
   },
-  "VERSION" => "0.002",
+  "VERSION" => "0.003",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -43,6 +44,7 @@ my %WriteMakefileArgs = (
 
 my %FallbackPrereqs = (
   "Data::Dumper" => 0,
+  "Digest::CRC" => 0,
   "ExtUtils::MakeMaker" => 0,
   "File::Spec" => 0,
   "List::Util" => 0,
