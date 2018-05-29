@@ -12,6 +12,8 @@ use Log::Log4perl qw(:easy);
 use List::Util qw(any);
 use Math::Units qw(convert);
 use Math::Round;
+use Digest::CRC qw(crcccitt);
+
 
 has verbose => (
     is      => 'ro',
@@ -25,6 +27,7 @@ sub BUILD {
     $self->{_last_packet} = "";
     # Add stuff here
     $self->{_init_rain_reading} = 1;
+    $self->{_crc} = Digest::CRC->new(width=>16,init=>0x0000,xorout=>0,refout=>0,poly=>0x1021,refin=>0,cont=>0);
 }
 
 sub decode {
@@ -113,9 +116,29 @@ sub _parse_data {
 
 	# Check if the CRC was valid
 	$data->{rawpacket} = $self->{_last_packet};
-		
-	if (substr($data->{rawpacket}, -4, 4) ne 'FFFF' || !defined($data->{rawpacket}) || !defined($input)){
-		$data->{crc} = "fail";
+	
+	# Check length, expecting 10 bytes
+	if (length($data->{rawpacket}) != 20) {
+		LOGCARP "Unexpected packet length, should be 10 bytes";
+		return $data->{crc} = "fail";
+	}
+	
+	## Strip the last two bytes for the CRC calculation
+	my $payload =  substr($data->{rawpacket}, 0, -4);
+	
+	# Check the CRC
+	my $crc_input = substr($payload, 0, -4);
+	my $crc_input_bin = pack("H*",$crc_input);
+
+	$self->{_crc}->reset();	
+	$self->{_crc}->add($crc_input_bin);
+	
+	INFO "Input: $crc_input";
+
+	my $crc_hex = uc($self->{_crc}->hexdigest());
+			
+	if (uc(substr($payload, -4, 4)) ne $crc_hex || !defined($data->{rawpacket}) || !defined($input)){
+		$data->{crc} = "fail, expected $crc_hex";
 		return $data;			
 	} else {
 		$data->{crc} = "ok";
@@ -198,14 +221,7 @@ sub _parse_data {
 					$new_rain = $rain_counter - $self->{_last_rain_bucketcount};
 				}
 				
-				# Only accept valid input, there can't be more than 2 tips per delta
-				if ($new_rain < 3) {
-					$self->{_last_rain_bucketcount} = $rain_counter;
-				} else {
-					# Else we don't accept
-					INFO "Refusing to accept $new_rain bucket tips"; 
-					$new_rain = 0;
-				}
+				$self->{_last_rain_bucketcount} = $rain_counter;
 				
 			}
 		}
