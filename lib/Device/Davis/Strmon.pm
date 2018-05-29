@@ -119,7 +119,7 @@ sub _parse_data {
 	
 	# Check length, expecting 10 bytes
 	if (length($data->{rawpacket}) != 20) {
-		LOGCARP "Unexpected packet length, should be 10 bytes";
+		ERROR "Unexpected packet length, should be 10 bytes";
 		return $data->{crc} = "fail";
 	}
 	
